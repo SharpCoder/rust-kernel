@@ -1,6 +1,7 @@
 #![feature(lang_items, asm)]
 #![crate_type = "staticlib"]
 #![no_std]
+pub mod lib;
 
 const GPIO_BASE: u32 = 0x4804C000;
 const GPIO_OE_OFFSET: u32 = 0x134;
@@ -13,15 +14,9 @@ pub fn main() {
     loop {
         init();
         set_led(true);
-        sleep(10000000);
+        lib::sleep(5000000);
         set_led(false);
-        sleep(10000000);
-    }
-}
-
-fn sleep(cycles: u32) {
-    for _ in 0..cycles {
-        unsafe { asm!("nop"); }
+        lib::sleep(5000000);
     }
 }
 
