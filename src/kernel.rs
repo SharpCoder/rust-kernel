@@ -2,39 +2,32 @@
 #![crate_type = "staticlib"]
 #![no_std]
 pub mod lib;
+pub mod gpio;
 
-const GPIO_BASE: u32 = 0x4804C000;
-const GPIO_OE_OFFSET: u32 = 0x134;
-const GPIO_DATAOUT: u32 = 0x13C;
 const CM_BASE: u32 = 0x44E00000;
 const CM_CLKCTRL_OFFSET: u32 = 0xAC;
 
 #[no_mangle]
 pub fn main() {
-    loop {
-        init();
-        set_led(true);
-        lib::sleep(5000000);
-        set_led(false);
-        lib::sleep(5000000);
+    init();
+    for i in 21 .. 24 {
+        gpio::configure(i, gpio::GpioMode::Output);
     }
-}
-
-fn set_led(on: bool) {
-    let gpio_ptr = (GPIO_BASE + GPIO_DATAOUT) as *mut u32;
-    if on {
-        unsafe { *gpio_ptr = 0xFFFFFFFF; }
-    } else {
-        unsafe { *gpio_ptr = 0x0; }
+    
+    loop {
+        for i in 21 ..= 24 {
+            gpio::set(i, true);
+            lib::sleep(5000000);
+            gpio::set(i, false);
+        }
+        lib::sleep(5000000);
     }
 }
 
 fn init() {
     let clock_ptr = (CM_BASE + CM_CLKCTRL_OFFSET) as *mut u32;
-    let gpio_oe_ptr = (GPIO_BASE + GPIO_OE_OFFSET) as *mut u32;
     unsafe {
         *clock_ptr = 0x2;
-        *gpio_oe_ptr = 0x00;
     }
 }
 

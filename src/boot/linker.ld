@@ -14,7 +14,7 @@ ENTRY(main)
 SECTIONS {
   .text : {
     *(.text*)
-  } > rom
+  } > sram
 
   .bss : {
     *(.bss*)
@@ -22,7 +22,7 @@ SECTIONS {
 
   .data : {
     *(.data*);
-  } > sram AT > rom
+  } > sram
 
   .stack : {
     . = ALIGN(8);
