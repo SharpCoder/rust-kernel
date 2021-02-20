@@ -3,7 +3,6 @@
   It contains a length of 64kb
 */
 MEMORY {
-    rom (rw) : ORIGIN = 0x40000000, LENGTH = 0x1FFFF
     sram (rwx) : ORIGIN = 0x402F0400, LENGTH = 0x10000
 }
 
