@@ -3,31 +3,17 @@
   It contains a length of 64kb
 */
 MEMORY {
-    sram (rwx) : ORIGIN = 0x402F0400, LENGTH = 0x10000
+    sram (rwx) : ORIGIN = 0x00000000, LENGTH = 0xFFFF
 }
 
 /* Section variables */
-STACK_SIZE = 0x2000;
-
 ENTRY(main)
 SECTIONS {
-  .text : {
-    *(.text*)
+  .text : { 
+    *(.text.main);
+    *(.text);
   } > sram
-
-  .bss : {
-    *(.bss*)
-  } > sram
-
-  .data : {
-    *(.data*);
-  } > sram
-
-  .stack : {
-    . = ALIGN(8);
-    . = . + STACK_SIZE;
-    . = ALIGN(8);
-  } > sram
-
+  .bss : { *(.bss*) } > sram
+  .data : { *(.data*) } > sram
   _end = . ;
 }
