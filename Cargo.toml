@@ -1,0 +1,16 @@
+[package]
+name = "armv7a-rust-os"
+version = "0.1.0"
+authors = ["Josh Cole <colemangrill@live.com>"]
+edition = "2018"
+
+[unstable]
+asm = 'yes'
+
+[lib]
+name = "kernel"
+path = "src/lib.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]

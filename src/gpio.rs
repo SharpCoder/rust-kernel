@@ -1,4 +1,4 @@
-use lib;
+use crate::sys;
 
 const GPIO_BASE: u32 = 0x4804C000;
 const GPIO_OE_OFFSET: u32 = 0x134;
@@ -15,10 +15,10 @@ pub enum GpioMode {
 pub fn configure(pin: u8, mode: GpioMode) {
     match mode {
         GpioMode::Input => {
-            unsafe { GPIO_MODE_BITS = lib::set_bit(GPIO_MODE_BITS, pin); }
+            unsafe { GPIO_MODE_BITS = sys::set_bit(GPIO_MODE_BITS, pin); }
         },
         GpioMode::Output => {
-            unsafe { GPIO_MODE_BITS = lib::clear_bit(GPIO_MODE_BITS, pin); }
+            unsafe { GPIO_MODE_BITS = sys::clear_bit(GPIO_MODE_BITS, pin); }
         },
     }
 
@@ -29,10 +29,10 @@ pub fn configure(pin: u8, mode: GpioMode) {
 pub fn set(pin: u8, val: bool) {
     match val {
         true => {
-            unsafe { GPIO_VAL = lib::set_bit(GPIO_VAL, pin); }
+            unsafe { GPIO_VAL = sys::set_bit(GPIO_VAL, pin); }
         },
         false => {
-            unsafe { GPIO_VAL = lib::clear_bit(GPIO_VAL, pin); }
+            unsafe { GPIO_VAL = sys::clear_bit(GPIO_VAL, pin); }
         },
     }
     

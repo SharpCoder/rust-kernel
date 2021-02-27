@@ -4,12 +4,13 @@
     Write a debug helper which outputs morse code, so you don't need a monitor :)
 */
 #![allow(dead_code)]
-use lib;
-use gpio;
+use crate::gpio;
+use crate::sys;
+use crate::sys::lists::{Stack};
 
 // Configure the gpio pin which is used as data output
 const GPIO_PIN: u8 = 21;
-const SLEEP_TIME: u32 = 800000; // 1000000
+const SLEEP_TIME: u32 = 1200000; // 1000000
 
 const DOT_TIME: u32 = 3;
 const WHACK_TIME: u32 = DOT_TIME * 3;
@@ -22,6 +23,27 @@ pub fn emit(input: &[u8]) {
         emit_rest();
     }
     emit_word_rest();
+}
+
+pub fn emit_num(input: u32) {
+    let mut temp = input;
+    let mut stack = Stack::new();
+
+    while temp > 0 {
+        let v: u8 = (temp % 10) as u8;
+        stack.push(v);
+        temp /= 10;
+    }
+
+    loop {
+        match stack.pop() {
+            None => break,
+            Some(element) => {
+                emit_char(num_to_char(element));
+                emit_rest();
+            },
+        }
+    }
 }
 
 pub fn emit_char(character: char) {
@@ -72,27 +94,56 @@ pub fn emit_char(character: char) {
 fn emit_dot(repetition: usize) {
     for _ in 0 .. repetition {
         gpio::set(GPIO_PIN, true);
-        lib::sleep(SLEEP_TIME * DOT_TIME);
+        sys::sleep(SLEEP_TIME * DOT_TIME);
         gpio::set(GPIO_PIN, false);
-        lib::sleep(SLEEP_TIME * DOT_TIME);
+        sys::sleep(SLEEP_TIME * DOT_TIME);
     }
 }
 
 fn emit_whack(repition: usize) {
     for _ in 0 .. repition {
         gpio::set(GPIO_PIN, true);
-        lib::sleep(SLEEP_TIME * WHACK_TIME);
+        sys::sleep(SLEEP_TIME * WHACK_TIME);
         gpio::set(GPIO_PIN, false);
-        lib::sleep(SLEEP_TIME * DOT_TIME);
+        sys::sleep(SLEEP_TIME * DOT_TIME);
     }
 }
 
 fn emit_rest() {
     gpio::set(GPIO_PIN, false);
-    lib::sleep(SLEEP_TIME * LETTER_REST_TIME);
+    sys::sleep(SLEEP_TIME * LETTER_REST_TIME);
 }
 
 fn emit_word_rest() {
     gpio::set(GPIO_PIN, false);
-    lib::sleep(SLEEP_TIME * WORD_REST_TIME);
+    sys::sleep(SLEEP_TIME * WORD_REST_TIME);
+}
+
+fn num_to_char(input: u8) -> char {
+    if input >= 10 || input < 0 {
+        return '\0';
+    } else {
+        return (('0' as u8) + input) as char;
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_number_to_char() {
+        assert_eq!(num_to_char(0), '0');
+        assert_eq!(num_to_char(1), '1');
+    }
+
+    #[test]
+    fn test_emit_num() {
+        let mut temp = 102;
+        assert_eq!((temp % 10) as u8, 2);
+        temp /= 10;
+        assert_eq!((temp % 10) as u8, 0);
+        temp /= 10;
+        assert_eq!((temp % 10) as u8, 1);
+    }
 }
