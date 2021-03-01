@@ -1,6 +1,8 @@
+#![allow(dead_code)]
 use crate::sys;
+use crate::board::memorymap::{CM_PER, GPIO1};
 
-const GPIO_BASE: u32 = 0x4804C000;
+const CM_PER_GPIO1_CLKCTRL: u32 = 0xAC;
 const GPIO_OE_OFFSET: u32 = 0x134;
 const GPIO_DATAOUT: u32 = 0x13C;
 
@@ -10,6 +12,12 @@ static mut GPIO_VAL: u32 = 0x00;
 pub enum GpioMode {
     Input,
     Output,
+}
+
+pub fn init() {
+    // Enable GPIO1 clock
+    let clock_ptr = (CM_PER + CM_PER_GPIO1_CLKCTRL) as *mut u32;
+    unsafe { *clock_ptr = 0x2; }
 }
 
 pub fn configure(pin: u8, mode: GpioMode) {
@@ -22,7 +30,7 @@ pub fn configure(pin: u8, mode: GpioMode) {
         },
     }
 
-    let gpio_oe_ptr = (GPIO_BASE + GPIO_OE_OFFSET) as *mut u32;
+    let gpio_oe_ptr = (GPIO1 + GPIO_OE_OFFSET) as *mut u32;
     unsafe { *gpio_oe_ptr = GPIO_MODE_BITS; }
 }
 
@@ -36,6 +44,6 @@ pub fn set(pin: u8, val: bool) {
         },
     }
     
-    let gpio_ptr = (GPIO_BASE + GPIO_DATAOUT) as *mut u32;
+    let gpio_ptr = (GPIO1 + GPIO_DATAOUT) as *mut u32;
     unsafe { *gpio_ptr = GPIO_VAL; }
 }

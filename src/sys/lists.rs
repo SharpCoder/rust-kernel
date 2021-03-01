@@ -4,32 +4,23 @@
     This is a rust implementation of a system level linked list. It supports
     standard operations including pop, and get.
 */
+#![allow(dead_code)]
 use crate::sys::mem::{ kalloc, free };
 
 #[derive(Copy, Clone)]
-struct Node<T>
-where T : Copy {
+struct Node<T : Copy> {
     item: T,
-    next: Link<T>,
+    next: Option<*mut Node<T>>,
 }
 
-#[derive(Copy, Clone)]
-enum Link<T> 
-where T : Copy {
-    Empty,
-    More(*mut Node<T>),
-}
-
-pub struct Stack<T>
-where T : Copy {
-    head: Link<T>,
+pub struct Stack<T : Copy> {
+    head: Option<*mut Node<T>>,
     size: usize,
 }
 
-impl <T> Stack<T>
-where T : Copy {
+impl <T : Copy> Stack<T> {
     pub fn new() -> Self {
-        return Stack { head: Link::Empty, size: 0 };
+        return Stack { head: None, size: 0 };
     }
 
     pub fn push(&mut self, item: T) {
@@ -41,16 +32,16 @@ where T : Copy {
             };
         }
 
-        self.head = Link::More(ptr);
+        self.head = Some(ptr);
         self.size = self.size + 1;
     }
 
     pub fn pop(&mut self) -> Option<T> {
         match self.head {
-            Link::Empty => {
+            None => {
                 return None;
             },
-            Link::More(ref node) => {
+            Some(ref node) => {
                 // Copy the reference
                 let indirect = node.clone();
                 let node_item = unsafe { *indirect };
@@ -63,7 +54,7 @@ where T : Copy {
                 self.size = self.size - 1;
                 return Some(result);
             },
-        };
+        };  
     }
     
     pub fn size(&self) -> usize {

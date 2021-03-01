@@ -4,15 +4,15 @@
     Write a debug helper which outputs morse code, so you don't need a monitor :)
 */
 #![allow(dead_code)]
-use crate::gpio;
-use crate::sys;
+use crate::board::gpio;
+use crate::board::timer::wait_ms;
 use crate::sys::lists::{Stack};
 
 // Configure the gpio pin which is used as data output
 const GPIO_PIN: u8 = 21;
-const SLEEP_TIME: u32 = 1200000; // 1000000
+const SLEEP_TIME_MS: u32 = 350;
 
-const DOT_TIME: u32 = 3;
+const DOT_TIME: u32 = 1;
 const WHACK_TIME: u32 = DOT_TIME * 3;
 const LETTER_REST_TIME: u32 = DOT_TIME * 3;
 const WORD_REST_TIME: u32 = (DOT_TIME * 7) - LETTER_REST_TIME;
@@ -94,33 +94,33 @@ pub fn emit_char(character: char) {
 fn emit_dot(repetition: usize) {
     for _ in 0 .. repetition {
         gpio::set(GPIO_PIN, true);
-        sys::sleep(SLEEP_TIME * DOT_TIME);
+        wait_ms(SLEEP_TIME_MS * DOT_TIME);
         gpio::set(GPIO_PIN, false);
-        sys::sleep(SLEEP_TIME * DOT_TIME);
+        wait_ms(SLEEP_TIME_MS * DOT_TIME);
     }
 }
 
 fn emit_whack(repition: usize) {
     for _ in 0 .. repition {
         gpio::set(GPIO_PIN, true);
-        sys::sleep(SLEEP_TIME * WHACK_TIME);
+        wait_ms(SLEEP_TIME_MS * WHACK_TIME);
         gpio::set(GPIO_PIN, false);
-        sys::sleep(SLEEP_TIME * DOT_TIME);
+        wait_ms(SLEEP_TIME_MS * DOT_TIME);
     }
 }
 
 fn emit_rest() {
     gpio::set(GPIO_PIN, false);
-    sys::sleep(SLEEP_TIME * LETTER_REST_TIME);
+    wait_ms(SLEEP_TIME_MS * LETTER_REST_TIME);
 }
 
 fn emit_word_rest() {
     gpio::set(GPIO_PIN, false);
-    sys::sleep(SLEEP_TIME * WORD_REST_TIME);
+    wait_ms(SLEEP_TIME_MS * WORD_REST_TIME);
 }
 
 fn num_to_char(input: u8) -> char {
-    if input >= 10 || input < 0 {
+    if input >= 10 {
         return '\0';
     } else {
         return (('0' as u8) + input) as char;

@@ -2,37 +2,30 @@
 #![crate_type = "staticlib"]
 #![no_std]
 mod sys;
-mod gpio;
 mod debug;
-mod timer;
-
-const CM_BASE: u32 = 0x44E00000;
-const CM_CLKCTRL_OFFSET: u32 = 0xAC;
+mod board;
 
 #[no_mangle]
 pub fn main() {
     init();
-    // timer::init();
-    // timer::start_timer();
-    // sys::sleep(1000000);
-    // timer::stop_timer();
-    // let timer_val = timer::read_timer();
-
     loop {
-        // Output the timer
-        debug::emit_num(123);
-        debug::emit(b" ");
+        blink();
     }
 }
 
+fn blink() {
+    debug::emit_num(1237);
+    debug::emit(b" ");
+}
+
 fn init() {
-    // Enable GPIO1 clock
-    let clock_ptr = (CM_BASE + CM_CLKCTRL_OFFSET) as *mut u32;
-    unsafe { *clock_ptr = 0x2; }
+    // Enable timer
+    board::timer::init();
+    board::gpio::init();
 
     // Set GPIO pins for USR LED's to output
     for i in 21 ..= 24 {
-        gpio::configure(i, gpio::GpioMode::Output);
+        board::gpio::configure(i, board::gpio::GpioMode::Output);
     }
 }
 
@@ -45,7 +38,7 @@ pub extern fn eh_personality() {}
 pub extern fn my_panic(_info: &core::panic::PanicInfo) -> ! {
     // Turn on all USR LED's for obvious panic condition
     for i in 21..=24 {
-        gpio::set(i, true);
+        board::gpio::set(i, true);
     }
 
     loop { }
