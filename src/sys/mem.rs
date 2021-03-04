@@ -2,23 +2,26 @@
     Author: Josh Cole
     This library is dedicated to onboard OCMC RAM. 64kb
 */
-#![allow(dead_code)]
+#![allow(dead_code, unused_imports)]
 #[cfg(test)]
 use std::alloc::{alloc, Layout};
 use core::mem::{size_of};
+use crate::board::memorymap::{
+    EMIF0_SDRAM,
+    KB64,
+    GB1,
+};
 
 // Per 2.1 in the AM335x Technical Reference Manual
-const OCMC0_BASE_PTR: u32 = 0x4030_0000;
-const OCMC0_MAX: u32 = 0x10000;
-static mut OCMC0_OFFSET: u32 = 0;
+const MEMORY_MAXIMUM: u32 = GB1;
+static mut MEMORY_OFFSET: u32 = 0;
 
-/// Overwrite entire memoryspace with zeroes.
-/// Is this useful? Idk.
-pub fn zero_all() {
-    let ptr = (OCMC0_BASE_PTR) as *mut u32;
-    unsafe {
-        for idx in 0 .. OCMC0_MAX / 4 {
-            *ptr.offset(idx as isize) = 0;
+pub fn memtest() {
+    // Write one to every byte of memory and check for overflow.
+    let ptr = EMIF0_SDRAM as *mut u32;
+    for idx in 0 .. GB1 / 4 {
+        unsafe { 
+            *ptr.offset(idx as isize) = 0xFFFF_FFFE;
         }
     }
 }
@@ -37,12 +40,12 @@ pub fn kalloc<T>() -> *mut T {
     // Check for boundaries and reset if applicable.
     // TODO: this is definitely USR LED worthy. Maybe even panic worthy.
     unsafe {
-        if OCMC0_OFFSET + bytes as u32 > OCMC0_MAX {
-            OCMC0_OFFSET = 0;
+        if MEMORY_OFFSET + bytes as u32 > MEMORY_MAXIMUM {
+            MEMORY_OFFSET = 0;
         }
     
-        let ptr = (OCMC0_BASE_PTR + OCMC0_OFFSET) as *mut T;
-        OCMC0_OFFSET += bytes as u32;
+        let ptr = (EMIF0_SDRAM + MEMORY_OFFSET) as *mut T;
+        MEMORY_OFFSET += bytes as u32;
         return ptr;
     }
 }
@@ -50,9 +53,9 @@ pub fn kalloc<T>() -> *mut T {
 /// Free a pointer by updating the pagefile
 pub fn free<T>(ptr: *mut T) {
     let bytes = size_of::<T>();
+    let zero_ptr = ptr as *mut u32;
     for i in 0 .. bytes / 4 {
         unsafe { 
-            let zero_ptr = ptr as *mut u32;
             *(zero_ptr.offset(i as isize)) = 0;
         }
     }

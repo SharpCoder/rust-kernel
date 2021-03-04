@@ -8,20 +8,17 @@ mod board;
 #[no_mangle]
 pub fn main() {
     init();
-    loop {
-        blink();
-    }
-}
 
-fn blink() {
-    debug::emit_num(1237);
-    debug::emit(b" ");
+    loop {
+        debug::emit(b"hello world");
+    }    
 }
 
 fn init() {
     // Enable timer
-    board::timer::init();
+    board::emif::init();
     board::gpio::init();
+    board::timer::init();
 
     // Set GPIO pins for USR LED's to output
     for i in 21 ..= 24 {
@@ -31,7 +28,12 @@ fn init() {
 
 #[lang = "eh_personality"]
 #[no_mangle]
-pub extern fn eh_personality() {}
+pub extern fn eh_personality() {
+    // Turn on all USR LED's for obvious panic condition
+    for i in 21..=24 {
+        board::gpio::set(i, true);
+    }
+}
 
 #[panic_handler]
 #[no_mangle]

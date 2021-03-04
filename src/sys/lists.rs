@@ -41,13 +41,13 @@ impl <T : Copy> Stack<T> {
             None => {
                 return None;
             },
-            Some(ref node) => {
+            Some(node) => {
                 // Copy the reference
                 let indirect = node.clone();
                 let node_item = unsafe { *indirect };
                 
                 // Free the actual node.
-                free(*node);
+                free(node);
 
                 let result = node_item.item;
                 self.head = node_item.next;
