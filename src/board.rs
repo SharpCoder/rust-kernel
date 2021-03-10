@@ -1,4 +1,4 @@
+pub mod clocks;
 pub mod gpio;
+pub mod platform;
 pub mod timer;
-pub mod memorymap;
-pub mod emif;

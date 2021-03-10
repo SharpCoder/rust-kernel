@@ -6,7 +6,7 @@
 #[cfg(test)]
 use std::alloc::{alloc, Layout};
 use core::mem::{size_of};
-use crate::board::memorymap::{
+use crate::board::platform::{
     EMIF0_SDRAM,
     KB64,
     GB1,
@@ -14,11 +14,13 @@ use crate::board::memorymap::{
 
 // Per 2.1 in the AM335x Technical Reference Manual
 const MEMORY_MAXIMUM: u32 = GB1;
+const MEMORY_ADDRESS: u32 = EMIF0_SDRAM;
 static mut MEMORY_OFFSET: u32 = 0;
 
+#[cfg(not(test))]
 pub fn memtest() {
     // Write one to every byte of memory and check for overflow.
-    let ptr = EMIF0_SDRAM as *mut u32;
+    let ptr = MEMORY_ADDRESS as *mut u32;
     for idx in 0 .. GB1 / 4 {
         unsafe { 
             *ptr.offset(idx as isize) = 0xFFFF_FFFE;
@@ -44,7 +46,7 @@ pub fn kalloc<T>() -> *mut T {
             MEMORY_OFFSET = 0;
         }
     
-        let ptr = (EMIF0_SDRAM + MEMORY_OFFSET) as *mut T;
+        let ptr = (MEMORY_ADDRESS + MEMORY_OFFSET) as *mut T;
         MEMORY_OFFSET += bytes as u32;
         return ptr;
     }

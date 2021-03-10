@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 use crate::sys;
-use crate::board::memorymap::{CM_PER, GPIO1};
+use crate::board::platform::{
+    CM_PER, GPIO1
+};
 
 const CM_PER_GPIO1_CLKCTRL: u32 = 0xAC;
 const GPIO_OE_OFFSET: u32 = 0x134;

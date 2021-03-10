@@ -4,56 +4,96 @@
     sleep mechanism. 
 */
 #![allow(dead_code)]
-use crate::board::memorymap::DMTIMER0;
+const TIOCP_CFG: u32 = 0x10;
+const IRQ_EOI_REG: u32 = 0x20;
+const IRQENABLE_SET_REG: u32 = 0x2C;
+const IRQSTATUS_REG: u32 = 0x28;
+const IRQENABLE_CLR_REG: u32 = 0x30;
 const TCLR_REG: u32 = 0x38;
 const TCRR_REG: u32 = 0x3C;
-const TIOCP_CFG: u32 = 0x10;
+const TLDR_REG: u32 = 0x40;
+const TTRG_REG: u32 = 0x44;
 
-pub fn init() {
-    let tiocp_ptr = (DMTIMER0 + TIOCP_CFG) as *mut u32;
-    unsafe { *tiocp_ptr = 0x00; }
+pub const ENABLE_AUTO_RELOAD: u32 = 0x1;
+pub const IRQ_MATCH_MODE: u32 = 0x2;
+pub const IRQ_OVERFLOW_MODE: u32 = 0x4;
+pub const IRQ_CAPTURE_MODE: u32 = 0x8;
+
+
+pub struct Timer {
+    base_addr: u32,
+    pub config_mask: u32,
+    ticks: u128,
 }
 
-pub fn start_timer() {
-    let ptr = (DMTIMER0 + TCLR_REG) as *mut u32;
-    unsafe { *ptr = 0x01; }
-}
+impl Timer {
+    pub const fn new(base_addr: u32) -> Self {
+        return Timer {
+            base_addr: base_addr,
+            config_mask: 0x0,
+            ticks: 0,
+        };
+    }
 
-pub fn stop_timer() {
-    let ptr = (DMTIMER0 + TCLR_REG) as *mut u32;
-    unsafe { *ptr = 0x00; }
-}
+    pub fn incr(&mut self) {
+        self.ticks += 1;
+    }
 
-pub fn reset_timer() {
-    let ptr = (DMTIMER0 + TCRR_REG) as *mut u32;
-    unsafe { *ptr = 0x00; }
-    // Wait a few cycle
-    for _ in 0 ..= 5000 {
-        unsafe { asm!("nop"); }
+    pub fn elapsed(&self) -> u128 {
+        return self.ticks;
+    }
+
+    pub fn configure(&mut self, bit_mask: u32) {
+        self.config_mask = bit_mask;
+    }    
+
+    pub fn start(&self) {
+        // Initialize
+        crate::sys::assign(self.base_addr + TIOCP_CFG, 0x0);
+        crate::sys::assign(self.base_addr + TCLR_REG, 0x1 | ((0x1 & self.config_mask) << 1));
+    }
+
+    pub fn stop(&self) {
+        crate::sys::assign(self.base_addr + TCLR_REG, 0x0);
+    }
+
+    pub fn set_load_value(&self, value: u32) {
+        crate::sys::assign(self.base_addr + TLDR_REG, value);
+    }
+
+    pub fn set_value(&self, value: u32) {
+        crate::sys::assign(self.base_addr + TTRG_REG, value);
+        crate::sys::assign(self.base_addr + TCRR_REG, value);
+    }
+
+    pub fn irq_enable(&self) {
+        crate::sys::assign(self.base_addr + IRQENABLE_SET_REG, (0xE & self.config_mask) >> 1);
+    }
+
+    pub fn irq_disable(&self) {
+        crate::sys::assign(self.base_addr + IRQENABLE_CLR_REG, 0x2);
+    }
+
+    pub fn irq_clear(&self) {
+        crate::sys::assign(self.base_addr + IRQSTATUS_REG, 0x7);
+    }
+
+    pub fn irq_acknowledge(&self) {
+        crate::sys::assign(self.base_addr + IRQ_EOI_REG, 0x0);
     }
 }
 
-pub fn read_timer() -> u32  {
-    let ptr = (DMTIMER0 + TCRR_REG) as *mut u32;
-    unsafe { 
-        return *ptr; 
-    };
-}
+#[cfg(test)]
+mod test_timer {
 
-pub fn wait(nano: u32) {
-    start_timer();
-    // TODO: Determine mathematically, why it needs 4 cycles extra
-    // to be temporally accurate.
-    let target = read_timer() + nano * 4;
-    loop {
-        if read_timer() >= target {
-            break;
-        } else {
-            unsafe { asm!("nop"); }
-        }
+    use super::*;
+
+    #[test]
+    fn test_bit_shift() {
+        assert_eq!((0xE & IRQ_MATCH_MODE) >> 1, 0x1);
+        assert_eq!((0xE & IRQ_OVERFLOW_MODE) >> 1, 0x2);
+        assert_eq!((0xE & (IRQ_MATCH_MODE | IRQ_OVERFLOW_MODE)) >> 1, 0x3);
+        assert_eq!( 0x1 | ((0x1 & 0x0) << 1), 0x1);
+        assert_eq!( 0x1 | ((0x1 & (ENABLE_AUTO_RELOAD | IRQ_OVERFLOW_MODE | IRQ_MATCH_MODE)) << 1), 0x3);
     }
-}
-
-pub fn wait_ms(ms: u32) {
-    wait(ms * 10);
 }

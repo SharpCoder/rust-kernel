@@ -3,16 +3,13 @@
   It contains a length of 64kb
 */
 MEMORY {
-    sram (rwx) : ORIGIN = 0x00000000, LENGTH = 0xFFFF
+    sram (rwx) : ORIGIN = 0x402F0400, LENGTH = 0xFFFF
 }
 
 /* Section variables */
 ENTRY(main)
 SECTIONS {
-  .text : { 
-    *(.text.main);
-    *(.text);
-  } > sram
+  .text : { *(.text*) } > sram
   .bss : { *(.bss*) } > sram
   .data : { *(.data*) } > sram
   _end = . ;
