@@ -5,7 +5,7 @@
 */
 #![allow(dead_code)]
 use crate::board::gpio;
-// use crate::board::timer::wait_ms;
+use crate::sys::{wait_ms};
 use crate::sys::lists::{Stack};
 
 // Configure the gpio pin which is used as data output
@@ -89,10 +89,6 @@ pub fn emit_char(character: char) {
         ' ' => { emit_word_rest(); }
         _ => { },
     }
-}
-
-fn wait_ms(v: u32) {
-
 }
 
 fn emit_dot(repetition: usize) {

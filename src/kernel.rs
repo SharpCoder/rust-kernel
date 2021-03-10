@@ -3,11 +3,21 @@
 #![no_std]
 mod sys;
 mod board;
-mod interrupts;
+mod debug;
 
-use board::{clocks, platform, timer};
+use board::{clocks, platform, timer, interrupts};
 
-static mut CLOCK: timer::Timer = timer::Timer::new(platform::DMTIMER2);
+pub struct SystemContext {
+    pub sysclock: timer::Timer,
+}
+
+static mut CONTEXT: SystemContext = SystemContext {
+    sysclock: timer::Timer::new(platform::DMTIMER2),
+};
+
+pub fn get_context() -> &'static mut SystemContext {
+    unsafe { return &mut CONTEXT };
+}
 
 #[no_mangle]
 pub fn kmain() {
@@ -15,8 +25,8 @@ pub fn kmain() {
     initialize_platform();
     initialize_interrupts();
 
-
     loop {
+        debug::emit(b"hello world");
         unsafe {
             asm!("nop");
         }
@@ -30,6 +40,7 @@ fn initialize_platform() {
         clocks::CM_PER_GPIO1_CLKCTRL,
         clocks::CM_PER_EMIF_CLKCTRL,
         clocks::CM_PER_TIMER2_CLKCTRL,
+        clocks::CM_PER_TIMER3_CLKCTRL,
     ]);
 
     // Set GPIO pins for USR LED's to output
@@ -42,55 +53,41 @@ fn initialize_platform() {
 }
 
 fn initialize_interrupts() {
-    unsafe {
-        // Enable DMTimer2
-        CLOCK.stop();
-        CLOCK.set_load_value(0xFFFF_0000);
-        CLOCK.set_value(0xFFFF_0000);
-        CLOCK.configure(timer::ENABLE_AUTO_RELOAD | timer::IRQ_OVERFLOW_MODE);
-        CLOCK.irq_enable();
+    let context = get_context();
 
-        // Wire up register
-        interrupts::register_handler(interrupts::INT_DMTIMER2, handle_timer_irq);
-        interrupts::unmask_interrupt(interrupts::INT_DMTIMER2);
+    // Enable DMTimer2
+    context.sysclock.stop();
+    context.sysclock.set_load_value(0xFFFF_FFDF);
+    context.sysclock.set_value(0xFFFF_FFDF);
+    context.sysclock.configure(timer::ENABLE_AUTO_RELOAD | timer::IRQ_OVERFLOW_MODE);
+    context.sysclock.irq_enable();
 
-        // Start the clock
-        CLOCK.start();
-    }
-}
+    // Wire up register
+    interrupts::register_handler(interrupts::INT_DMTIMER2, handle_timer_irq);
+    interrupts::unmask_interrupt(interrupts::INT_DMTIMER2);
 
-fn wait() {
-    for _ in 0 ..= 5000000 {
-        unsafe { asm!("nop"); }
-    }
+    // Start the clock
+    context.sysclock.start();
 }
 
 fn handle_timer_irq() {
-    unsafe {
-        CLOCK.irq_disable();
-        CLOCK.stop();
-        CLOCK.irq_acknowledge();
-        CLOCK.irq_clear();
-        CLOCK.set_value(0xFFFF_0000);
-        CLOCK.incr();
+    let context = get_context();
 
-        board::gpio::set(21, true);
-        wait();
-        board::gpio::set(21, false);
-        wait();
-        
-        CLOCK.irq_enable();
-        CLOCK.start();
-    }
+    context.sysclock.irq_disable();
+    context.sysclock.stop();
+    context.sysclock.irq_acknowledge();
+    context.sysclock.irq_clear();
+    context.sysclock.set_value(0xFFFF_FFDF);
+    context.sysclock.incr();
+    context.sysclock.irq_enable();
+    context.sysclock.start();
 }
 
 #[no_mangle]
 fn handle_irq_rust() {
-    board::gpio::set(24, true);
     let int_number = interrupts::get_active_irq_number();
     interrupts::service_handler(int_number);
     interrupts::clear_interrupts();
-    board::gpio::set(24, false);
 }
 
 #[lang = "eh_personality"]

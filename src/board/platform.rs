@@ -17,6 +17,7 @@ pub const PRM_WKUP: u32 = 0x44E0_0D00;
 pub const PRM_DEVICE: u32 = 0x44E0_0F00;
 pub const GPIO1: u32 = 0x4804_C000; // GPIO1 Registers
 pub const DMTIMER0: u32 = 0x44E0_5000; // DMTimer0 Registers
+pub const DMTIMER1: u32 = 0x44E3_1000;
 pub const DMTIMER2: u32 = 0x4804_0000;
 pub const DMTIMER3: u32 = 0x4804_2000;
 pub const DMTIMER4: u32 = 0x4804_4000;

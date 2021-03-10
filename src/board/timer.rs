@@ -23,7 +23,7 @@ pub const IRQ_CAPTURE_MODE: u32 = 0x8;
 pub struct Timer {
     base_addr: u32,
     pub config_mask: u32,
-    ticks: u128,
+    ticks: u32,
 }
 
 impl Timer {
@@ -39,7 +39,7 @@ impl Timer {
         self.ticks += 1;
     }
 
-    pub fn elapsed(&self) -> u128 {
+    pub fn elapsed(&self) -> u32 {
         return self.ticks;
     }
 
