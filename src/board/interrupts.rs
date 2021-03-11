@@ -11,13 +11,15 @@ pub const INT_DMTIMER0: usize = 66;
 pub const INT_DMTIMER2: usize = 68;
 pub const INT_DMTIMER3: usize = 69;
 pub const INT_UART0: usize = 72;
+pub const INT_DMTIMER4: usize = 92;
+pub const INT_DMTIMER7: usize = 95;
 
 const INTC_SIR_IRQ_REG: u32 = 0x40;
 
 static mut VECTOR_HANDLERS: [Ptr; 128] = [noop; 128];
-static MIRN_BANK_ADDRESSES: [u32;4] = [0x88,0xA8,0xC8,0xE8];
+static MIRN_CLEAR_BANK_ADDRESSES: [u32;4] = [0x88,0xA8,0xC8,0xE8];
 
-fn get_mirn_address(int_number: usize) -> u32 {
+fn get_address_bank(int_number: usize) -> usize {
     let mut int_number = int_number;
     let mut bank = 0;
     loop {
@@ -29,7 +31,7 @@ fn get_mirn_address(int_number: usize) -> u32 {
         }
     }
 
-    return platform::INTCPS + MIRN_BANK_ADDRESSES[bank];
+    return bank;
 }
 
 pub fn get_active_irq_number() -> usize {
@@ -37,11 +39,10 @@ pub fn get_active_irq_number() -> usize {
 }
 
 pub fn unmask_interrupt(int_number: usize) {
-    let address = get_mirn_address(int_number);
-    let current_value = read_word(address);
-    let next_value = set_bit(current_value, int_number as u8);
-    assign(address, next_value);
-
+    let bank = get_address_bank(int_number);
+    let mirn_clear_address = platform::INTCPS + MIRN_CLEAR_BANK_ADDRESSES[bank];
+    let next_value = set_bit(0x0, int_number as u8);
+    assign(mirn_clear_address, next_value);
 }
 
 pub fn register_handler(int_number: usize, method: Ptr) {

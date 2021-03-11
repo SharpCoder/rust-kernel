@@ -1,5 +1,6 @@
 pub mod lists;
 pub mod mem;
+pub mod context;
 
 pub fn assign(address: u32, value: u32) {
     unsafe {
@@ -22,7 +23,7 @@ pub fn set_bit(number: u32, bit: u8) -> u32 {
 }
 
 pub fn millis() -> u32 {
-    let context = crate::get_context();
+    let context = context::get_context();
     return context.sysclock.elapsed();
 }
 

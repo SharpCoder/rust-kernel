@@ -19,6 +19,9 @@ pub const CM_PER_L3_CLKCTRL: u32 = 0xE0;
 pub const CM_PER_TIMER5_CLKCTRL: u32 = 0xEC;
 pub const CM_PER_TIMER6_CLKCTRL: u32 = 0xF0;
 pub const CM_PER_LCDC_CLKSTCTRL: u32 = 0x148;
+pub const CM_PER_L4HS_CLKSTCTRL: u32 = 0x11C;
+pub const CM_PER_L4HS_CLKCTRL: u32 = 0x120;
+
 
 pub fn enable_clock_device(address: u32) {
     crate::sys::assign(CM_PER + address, 0x2);

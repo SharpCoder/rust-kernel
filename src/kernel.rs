@@ -5,22 +5,18 @@ mod sys;
 mod board;
 mod debug;
 
-use board::{clocks, platform, timer, interrupts};
+use board::{clocks, timer, platform, interrupts};
+use sys::context::{configure_context, SystemContext, get_context};
 
-pub struct SystemContext {
-    pub sysclock: timer::Timer,
-}
-
-static mut CONTEXT: SystemContext = SystemContext {
-    sysclock: timer::Timer::new(platform::DMTIMER2),
-};
-
-pub fn get_context() -> &'static mut SystemContext {
-    unsafe { return &mut CONTEXT };
-}
+const CLOCK_RELOAD_VALUE: u32 = 0xFFFF_FFDF;
 
 #[no_mangle]
 pub fn kmain() {
+
+    // Configure the main application context
+    configure_context(SystemContext {
+        sysclock: timer::Timer::new(platform::DMTIMER2),
+    });
 
     initialize_platform();
     initialize_interrupts();
@@ -36,11 +32,9 @@ pub fn kmain() {
 fn initialize_platform() {
     clocks::enable_clock_devices(&[
         clocks::CM_PER_L4LS_CLKSTCTRL,
-        clocks::CM_PER_L4LS_CLKCTRL,
         clocks::CM_PER_GPIO1_CLKCTRL,
         clocks::CM_PER_EMIF_CLKCTRL,
         clocks::CM_PER_TIMER2_CLKCTRL,
-        clocks::CM_PER_TIMER3_CLKCTRL,
     ]);
 
     // Set GPIO pins for USR LED's to output
@@ -57,8 +51,8 @@ fn initialize_interrupts() {
 
     // Enable DMTimer2
     context.sysclock.stop();
-    context.sysclock.set_load_value(0xFFFF_FFDF);
-    context.sysclock.set_value(0xFFFF_FFDF);
+    context.sysclock.set_load_value(CLOCK_RELOAD_VALUE);
+    context.sysclock.set_value(CLOCK_RELOAD_VALUE);
     context.sysclock.configure(timer::ENABLE_AUTO_RELOAD | timer::IRQ_OVERFLOW_MODE);
     context.sysclock.irq_enable();
 
@@ -77,7 +71,7 @@ fn handle_timer_irq() {
     context.sysclock.stop();
     context.sysclock.irq_acknowledge();
     context.sysclock.irq_clear();
-    context.sysclock.set_value(0xFFFF_FFDF);
+    context.sysclock.set_value(CLOCK_RELOAD_VALUE);
     context.sysclock.incr();
     context.sysclock.irq_enable();
     context.sysclock.start();
