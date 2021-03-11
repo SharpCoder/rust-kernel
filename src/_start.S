@@ -6,10 +6,6 @@ main:
     LDR r1, basic_handler
     STR r1,[r0]
 
-    @ Setup default stack pointer, wherever the hell we are at
-    ldr r0, stack_base
-    mov sp, r0
-
     @ Setup sp in IRQ mode
     mov r0, #0xD2
     msr cpsr_c, r0

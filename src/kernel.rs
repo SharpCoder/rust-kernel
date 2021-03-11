@@ -96,6 +96,3 @@ pub extern fn my_panic(_info: &core::panic::PanicInfo) -> ! {
 
 #[no_mangle]
 pub extern "C" fn __aeabi_unwind_cpp_pr0() { }
-
-#[no_mangle]
-pub extern "C" fn _ZN4core9panicking18panic_bounds_check17h2af2af33179e0cf0E() { }

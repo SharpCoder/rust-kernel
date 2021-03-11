@@ -4,7 +4,7 @@ mkdir out || true
 
 # Rust compilation
 echo "compiling rust"
-rustc --target arm-unknown-linux-gnueabihf -o out/kernel.o -O --emit=obj src/kernel.rs
+rustc -C lto --target arm-unknown-linux-gnueabihf -o out/kernel.o -O --emit=obj src/kernel.rs
 echo "compiling assembly"
 arm-none-eabi-gcc -c src/_start.S -o out/start.o
 echo "linking"
